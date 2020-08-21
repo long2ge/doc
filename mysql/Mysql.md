@@ -164,9 +164,21 @@ InnoDB存储引擎是面向列的（row-oriented），也就说数据是按行�
 
 
 
+B+树的优势：
 
 
 
+1.单一节点存储更多的元素，使得查询的IO次数更少。
+
+
+
+2.所有查询都要查找到叶子节点，查询性能稳定。
+
+
+
+3.所有叶子节点形成有序链表，便于范围查询。
+
+b树的中间节点没有卫星数据，所以同样大小的磁盘页可以容纳更多的节点元素，这样就意味着，数据量相同的情况下，b+树的结构比b树更加“矮肥”，因此查询时IO次数也更少。
 
 InnoDB索引实现
         虽然InnoDB也使用B+Tree作为索引结构，但具体实现方式却与MyISAM截然不同。
@@ -185,3 +197,230 @@ InnoDB索引实现
 
 
 这里以英文字符的ASCII码作为比较准则。聚集索引这种实现方式使得按主键的搜索十分高效，但是辅助索引搜索需要检索两遍索引：首先检索辅助索引获得主键，然后用主键到主索引中检索获得记录。
+
+
+
+
+页的概念，
+
+页是innodb读取磁盘的最小单位，整页整页的读取
+
+页分为，数据页（BTreeNode），Undo页（undo Log page），系统页（Systempage）,事务数据页（Transaction SystemPage）每个数数据页的大小为16kb，每个page使用一个32位int值来表示，
+一个page的基本结构
+
+
+![Image text](https://img2018.cnblogs.com/blog/1392612/201907/1392612-20190710184239763-842505149.png)  
+
+
+1，0-38：page头部，id，类型信息等占38个字节，头部保存两个指针分别指向前一个page和后一个page，page是一个双向列表
+
+ 
+
+2，38-16376：不同的类型页所含的数据不同，这部分空间包含系统记录（SystemRecord）和用户记录（UserRecord），我们表中的一条条记录就放在UserRecord部分，UserRecord存放的内容可以是以下内容
+
+a,主键索引树非叶子节点,B+tree索引，和指针
+
+b,主键索引树叶子节点，key和data（就是记录本身）
+
+c,辅助键索引树非叶子节点,B+tree辅助索引
+
+d,辅助键索引树叶子节点，key和data（这里的data是主键）
+
+页可以装很多种数据信息，有的页是B+树的所有主键索引，有的页是B+树的叶子节点也就是数据记录本身，有的页是我们创建的二级索引，
+
+ 
+
+16376-16384：page尾部
+
+页和节点的关系
+
+页和节点没有强相关关系
+页可以装很多种数据信息，有的页是B+树的所有主键索引，有的页是B+树的叶子节点也就是数据记录本身，有的页是我们创建的二级索引，
+
+ ![Image text](https://mmbiz.qpic.cn/mmbiz_png/zOuEk53MntaQh29vXwl9FIIzrM1TNAJQ7iaj5yk99RtCwJ7hb70Rp6NEyyYNlYzRpm1aGvdthQULAaYHJQb7bdw/640?wx_fmt=png)  
+
+由页组成的链表，页之间是双向列表，页里面的数据是单向链表，这种结构组成了主键索引B+树，组成了叶子节点数据。
+
+定位一条记录的过程，select  * from table where id = 29
+系统经过解析sql语句，首先读取装有非叶子节点page页，遍历非叶子节点，这个过程随着节点的遍历会将一个或多个page页加载到内存，直到定位到这条记录的叶子节点，然后遍历找出该条记录。
+
+ 
+
+如果使用了二级索引则先读取二级索引page遍历这个二级索引，找到装有主键信息叶子节点page页，遍历找到该主键。然后再根据主键索引寻找到该条记录
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  优化mysql数据库时常用到的两个命令：  
+MySQL的两个命令 ---- explain和procedure analyse
+
+
+		SELECT * FROM ticket_tk_admin_log PROCEDURE analyse(4); // 第四行分析
+		
+		
+mysql批量更新数据(性能优化)
+
+UPDATE categories 
+    SET display_order = CASE id 
+        WHEN 1 THEN 3 
+        WHEN 2 THEN 4 
+        WHEN 3 THEN 5 
+    END, 
+    title = CASE id 
+        WHEN 1 THEN 'New Title 1'
+        WHEN 2 THEN 'New Title 2'
+        WHEN 3 THEN 'New Title 3'
+    END
+WHERE id IN (1,2,3)
+
+
+
+如果又DBA，可以使用MySQL创建存储过程提高执行效率
+
+
+
+
+实践：排序分组优化
+环境 : 
+1. version >= 5.7
+优化之前，先要知道几个知识点
+1, sql执行的流程
+2, mysql配置
+3, mysql explain分析
+  排序优化
+  排序相关的mysql配置 
+sort_buffer_size  排序容量大小
+这个参数是针对每个进程的。 假设只需要查10个字段，但是SELECT *会查80个字段，那么就容易把sort_buffer缓冲区用满。
+max_length_for_sort_data  排序数据最大长度
+当所有返回字段的最大长度 > 这个值，会选择双路排序算法排序，否则选择单路排序算法。
+提高这个参数，会增加用改进算法的概率。但是如果设的太高，数据总量（所有返回字段的最大长度）超出sort_buffer_size的概率就增大,明显症状是高的磁盘I/O活动和低的处理器使用率。
+  mysql索引排序原理 
+双路排序：
+1. 从磁盘读取排序字段（行指针和ORDER BY列）。
+2. 在buffer进行排序。
+3. （按照列表排序的顺序）再从磁盘读取其他字段。
+双路排序的本质是两次扫描磁盘，最终得到数据。
+单路排序：
+1. 从磁盘读取所需要的所有列。
+2. 在buffer进行排序。
+3. 然后扫描排序后的列表进行输出。
+4. 并且把随机IO变成了顺序IO，但是它会使用更多的空间，因为它把每一行都保存在了内存里。
+5. 在sort_buffer中，单路排序要比双路排序占很多空间，
+6. 因为单路排序把所有的字段都取出，
+7. 所以有可能取出的数据的总大小超出了sort_buffer的容量，
+8. 导致每次只能读取sort_buffer容量大小的数据，
+9. 进行排序(创建tmp文件，多路合并)，排完再取sort_buffer容量大小，再次排序...从而多次I/O。
+  索引排序规则
+1, 如果有多个字段排序，那么多个字段的顺序需要一致的
+ORDER BY a DESC, b DESC, c DESC // 排序一致，走索引
+ORDER BY a ASC, b DESC, c DESC // 排序不一致,不走索引
+2， where 条件和排序字段，从左到右跟索引的顺序需要是连续且一致才会走索引
+走索引的例子
+WHERE a = const ORDER BY b,c                           
+WHERE a = const AND b = const ORDER BY c        
+WHERE a = const AND b > const ORDER BY b,c    这里如果只是order by c 那么索引就不连续了
+不走索引的例子
+WHERE g = const ORDER BY b,c //丢失a索引
+WHERE a = const ORDER BY c //丢失b索引
+WHERE a = const ORDER BY a,d //d不是索引的一部分
+WHERE a in (....) ORDER BY b,c //对于排序来说，多个相等条件也是范围查询
+explain 分析字段说明
+using index condition：查找使用了索引，但是需要回表查询数据
+using where：使用了WHERE子句进行限制
+using index condition：查找使用了索引，但是需要回表查询数据
+using index & using where：查找时使用了索引，只从索引中就可得到数据，不用访问表数据
+Using temporary ：查询结果排序时使用了临时表
+using filesort  在排序的时候没有使用到索引排序
+  GROUP BY 优化原理
+MySQL 有两种索引扫描方式完成 group by 操作，松散索引扫描和紧凑索引扫描以及临时表实现 group by。
+性能排序是这样的， 松散索引扫描 > 紧凑索引扫描 > 临时表实现。
+1. where高于having，能写在where限定条件中的就尽量写在where中。
+2. 当无法使用索引列排序时，适当增大sort_buffer_size参数 + 适当增大max_length_for_sort_data参数可以提高filesort排序的效率。
+3. group by与order by的索引优化基本一样，group by实质是先排序后分组，遵照索引原则可以提高group by的效率。
+使用松散索引扫描需要满足以下条件：
+就是所有信息都在索引上
+1. 查询在单一表上。
+2. group by 指定的所有列是索引的一个最左前缀，并且没有其它的列。
+3. 如果在选择列表 select list 中存在聚集函数，只能使用 min() 和 max() 两个聚集函数。
+4. 如果查询中存在除了 group by 指定的列之外的索引其他部分，那么必须以常量的形式出现（除了min() 和 max() 两个聚集函数）。
+5. 索引中的列必须索引整个数据列的值，而不是一个前缀索引。
+紧凑索引扫描（Tight Index Scan）
+1，where 条件使用到索引
+2, group by 和 where 组合后 能够用于索引查找
+group by 优化方法 — 直接排序
+SQL_BIG_RESULT 会让mysql使用数组来储存临时的数据
+ select SQL_BIG_RESULT id%100 as m, count(*) as c from t1 group by m;
+算法选择的流程就是这样的：
+1. 先放到内存临时表，插入一部分数据后，发现内存临时表不够用了再转成磁盘临时表。
+2. 在 group by 语句中加入 SQL_BIG_RESULT，将直接用磁盘临时表。
+3. MySQL 的优化器一看，磁盘临时表是 B+ 树存储，存储效率不如数组来得高。所以，既然你告诉我数据量很大，那从磁盘空间考虑，还是直接用数组来存吧。
+执行流程就是这样的：
+1. 初始化 sort_buffer，确定放入一个整型字段，记为 m；
+2. 扫描表 t1 的索引 a，依次取出里面的 id 值, 将 id%100 的值存入 sort_buffer 中；
+3. 扫描完成后，对 sort_buffer 的字段 m 做排序。如果 sort_buffer 内存不够用，就会利用磁盘临时文件辅助排序
+4. 排序完成后，就得到了一个有序数组。
+
+
+
+
+
+
+多个索引与多个搜索条件之间的关系
+# where a = 1 and b  = 2 and c = 3 , a, b, c 三个索引,看mysql选择那个sql ?  
+1 where子句中使用or来连接条件,因为如果俩个字段中有一个没有索引的话,引擎会放弃索引而产生全表
+扫描,如果 a or b 这样,那么a和b索引都会用上。
+2 如果是a and b，优化器会估算，那个索引性能更高，只会选择一个优化器认为最优的索引来使用。
+
+
+
+
+innodb的索引大小对查询速度的影响
+# 看一下innodb的索引大小会不会影响查询的速度。答案是不会。就是表占用的磁盘变大了
+SELECT SQL_NO_CACHE count(*) FROM `manor_task_state_100` where name = 'Miss Verdie Armstrong Jr.';
+name(5) Data_length 数据长度 1182793728  Index_length   索引长度 6358548480    1.404    1.419    1.436
+name(5) Data_length 数据长度 1182793728  Index_length   索引长度 2053226496    1.438    1.433    1.4
+
+filesort的过程：
+
+         1、根据表的索引或者全表扫描，读取所有满足条件的记录。
+
+         2、对与每一行，存储一对值到缓冲区（排序列，行记录指针），一个是排序的索引列的值，即order by用到的列值，和指向该行数据的行指针，缓冲区的大小为sort_buffer_size大小。
+
+         3、当缓冲区满后，运行一个快速排序（qsort）来将缓冲区中数据排序，并将排序完的数据存储到一个临时文件，并保存一个存储块的指针，当然如果缓冲区不满，则不会重建临时文件了。
+
+         4、重复以上步骤，直到将所有行读完，并建立相应的有序的临时文件。
+
+         5、对块级进行排序，这个类似与归并排序算法，只通过两个临时文件的指针来不断交换数据，最终达到两个文件，都是有序的。
+
+         6、重复5直到所有的数据都排序完毕。
+
+         7、采取顺序读的方式，将每行数据读入内存，并取出数据传到客户端，这里读取数据时并不是一行一行读，读如缓存大小由read_rnd_buffer_size来指定。
+
+这就是filesort的过程，采取的方法为：快速排序 + 归并排序，但有一个问题，就是，一行数据会被读两次，第一次是where条件过滤时，第二个是排完序后还得用行指针去读一次，一个优化的方法是，直接读入数据，排序的时候也根据 这个排序，排序完成后，就直接发送到客户端了，过程如下：
+
+           1、读取满足条件的记录
+
+           2、对于每一行，记录排序的key和数据行指针，并且把要查询的列也读出来
+
+           3、根据索引key排序
+
+           4、读取排序完成的文件，并直接根据数据位置读取数据返回客户端，而不是去访问表
+
+这也有一个问题：当获取的列很多的时候，排序起来就很占空间，因此，max_length_for_sort_data变量就决定了是否能使用这个排序算法
