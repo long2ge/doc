@@ -124,43 +124,31 @@ mkdir /usr/local/mysql/data
 
 chown -R mysql:mysql /usr/local/mysql/data
 
-Cd/usr/local/mysql
+cd /usr/local/mysql
 
 初始化数据库
 
-bin/mysqld --initialize --user=mysql
-
---basedir=/usr/local/mysql  --datadir=/usr/local/mysql/data
+bin/mysqld --initialize --user=mysql --basedir=/usr/local/mysql  --datadir=/usr/local/mysql/data
 
 cp support-files/my-default.cnf /etc/my.cnf
 
 [client]
-
 port=3306
-
-socket=/tmp/mysql.sock
-
+socket =/usr/local/mysql/mysql.sock
 default-character-set=utf8
 
 [mysqld]
-
 basedir=/usr/local/mysql
-
 datadir=/usr/local/mysql/data
-
 port=3306
-
 server_id=1
-
-socket =/tmp/mysql.sock
-
+socket =/usr/local/mysql/mysql.sock
 pid-file=/usr/local/mysql/data/mysql.pid
-
 bind-address=localhost
 
 #skip-grant-tables
 
-..........................................................................servicemysqld start
+..........................................................................service mysqld start
 
 cp support-files/mysql.server /etc/init.d/mysqld
 
@@ -212,23 +200,15 @@ mysql -uroot -p   #直接按回车，这时不需要输入root密码。
 
 3、修改root密码
 
-update
+update mysql.user set authentication_string=password('123456') where user='root';
 
-update mysql.user set authentication_string=password('123456') where user='root' and Host = 'localhost';
+flush privileges;  #刷新系统授权表
 
-flush
-
-privileges;  #刷新系统授权表
-
-grant
-
-all on *.* to 'root'@'localhost' identified by '123456' with grant option;
+grant all on *.* to 'root'@'localhost' identified by '123456' with grant option;
 
 4、取消/etc/my.cnf中的skip-grant-tables
 
-vi
-
-/etc/my.cnf编辑文件，找到[mysqld]，删除skip-grant-tables这一行
+vi /etc/my.cnf编辑文件，找到[mysqld]，删除skip-grant-tables这一行
 
 :wq!
 
