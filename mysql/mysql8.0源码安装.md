@@ -87,7 +87,9 @@ cd /usr/local/mysql
 
 bin/mysqld --initialize --user=mysql --basedir=/usr/local/mysql --datadir=/usr/local/mysql/data 
 
-### vi /etc/my.cnf
+### 配置文件
+
+vi /etc/my.cnf
 
 [client]
 port=3306
@@ -101,7 +103,7 @@ port=3306
 server_id=1
 socket =/usr/local/mysql/mysql.sock
 pid-file=/usr/local/mysql/data/mysql.pid
-bind-address=0.0.0.0
+# bind-address=0.0.0.0
 skip-grant-tables
 
 ### systemctl 管理
@@ -113,7 +115,6 @@ chmod +x /etc/init.d/mysqld
 systemctl enable mysqld
 
 systemctl start mysqld
-
 
 ### service 管理
 
@@ -133,18 +134,49 @@ echo -e '\n\nexport PATH=/usr/local/mysql/bin:$PATH\n' >> /etc/profile && source
  
 ### 修改数据库密码和权限
  
- ./mysql -uroot -p
- 
-  flush privileges;
- 
- alter user 'root'@'localhost' identified by "123456";
- 
- create user root@'%' identified by '123456';  // 添加远程登陆用户
- 
- grant all privileges on *.* to root@'%'; // 为远程用户分配权限
+ mysql -uroot -p
  
  flush privileges;
  
+ use mysql;
+ 
+ update user set host='%' where user='root';
+ 
+ alter user 'root'@'%' identified by '123456' password expire never; // 不知道能不能执行
+ 
+ alter user root@'%' identified with mysql_native_password by '123456';  // 添加远程登陆用户
+ 
+ grant all privileges on *.* to root@'%' with grant option; // 为远程用户分配权限
+ 
+ flush privileges;
+ 
+ 
+ 
+ 测试
+ 
+CREATE USER aaa@'%' IDENTIFIED BY '123456!';
+GRANT ALL ON *.* TO 'aaa'@'%';
+ALTER USER 'aaa'@'%' IDENTIFIED WITH mysql_native_password BY '123456!';
+FLUSH PRIVILEGES;
+
+ 
+### 再次修改配置文件,写上生产代码
+
+vi /etc/my.cnf
+
+     # 关闭跳过密码登陆
+     # skip-grant-tables 
+ 
+### 打开端口
+
+查看是否开放3306端口
+firewall-cmd --list-ports
+
+开放3306端口
+firewall-cmd --zone=public --add-port=3306/tcp --permanent
+
+刷新
+firewall-cmd --reload
  
 ###  修改系统配置
      
@@ -158,25 +190,15 @@ echo -e '\n\nexport PATH=/usr/local/mysql/bin:$PATH\n' >> /etc/profile && source
      [root@mysql ~]# su - mysql
      [mysql@mysql ~]$ ulimit -a
  
-
-
 ### 维护命令
-
 
 ps -ef | grep mysql
 
-查看是否开放3306端口
-firewall-cmd --list-ports
+关闭防火墙
+systemctl stop firewalld.service 
+
+禁止防火墙开机自启
+systemctl disable firewalld.service
 
 开启防火墙
 systemctl start firewalld.service 
-
-开放3306端口
-firewall-cmd --zone=public --add-port=3306/tcp --permanent
-刷新
-firewall-cmd --reload
-
-关闭防火墙
-systemctl stop firewalld.service 
-禁止防火墙开机自启
-systemctl disable firewalld.service

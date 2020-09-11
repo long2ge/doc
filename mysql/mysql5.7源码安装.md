@@ -4,133 +4,107 @@ mysql5.7源码编译安装
 
 yum install -y  gcc-c++ ncurses-devel perl-Data-Dumperpython-devel openssl openssl-devel
 
-二、安装cmake（因为mysql5.7的编译由cmake来实现）
+### cmake安装
+    wget https://cmake.org/files/v3.18/cmake-3.18.0.tar.gz
+    tar -zxvf cmake-3.18.0.tar.gz
+    cd cmake-3.18.0/
+    ./bootstrap       //此步可能遇到问题，见下文
+    gmake             //此步需要很长时间
+    gmake install
+    
+    /usr/local/bin/cmake --version  // 查看编译后的cmake版本
+    yum remove cmake -y   // 移除原来的cmake版本
+    ln -s /usr/local/bin/cmake /usr/bin/      // 新建软连接
+    cmake --version     // 终端查看版本
 
-安装cmake：
+### 安装boost (非必须)
 
-https://github.com/Kitware/CMake/releases/download/v3.16.2/cmake-3.16.2.tar.gz
+可以再编译mysql的时候设置自动下载安装
 
-cd cmake-3.16.2/
+    wget https://dl.bintray.com/boostorg/release/1.72.0/source/boost_1_72_0.zip
+    
+    unzip boost_1_72_0.zip
+    
+    mv  boost_1_72_0  /usr/local/boots
+    
+    cd /usr/local/boost
+    
+    ./bootstrap.sh
+    
+    ./b2
+    
+    sudo ./b2 install
 
-预编译和安装：
+    vi /etc/profile
+    
+    写入下面的内容
+        BOOST_ROOT=/usr/local/boost
+        BOOST_LIB=/usr/local/boost/stage/lib
+        BOOST_INCLUDE=/usr/local/include/boost
+        export BOOST_ROOT BOOST_INCLUDE BOOST_LIB
+    结束
+    
+    source /etc/profile
 
-./bootstrap
+### 编译安装mysql
 
-Make && make install
+    wget http://mirrors.sohu.com/mysql/MySQL-5.7/mysql-5.7.30.tar.gz
+    
+    tar -zxvf mysql-5.7.30.tar.gz
+    
+    cd mysql-5.7.30
 
-三、安装boost:
-
-下载源码包：
-
-wget https://dl.bintray.com/boostorg/release/1.72.0/source/boost_1_72_0.zip
-
-解压
-
-unzip boost_1_72_0.zip
-
-mv  boost_1_59_0  /usr/local/boots
-
-cd /usr/local/boost
-
-编译安装：
-
-./bootstrap.sh
-
-./b2
-
-sudo ./b2 install
-
-配置环境变量：
-
-vim /etc/profile
-
-BOOST_ROOT=/usr/local/boost
-
-BOOST_LIB=/usr/local/boost/stage/lib
-
-BOOST_INCLUDE=/usr/local/include/boost
-
-export BOOST_ROOT BOOST_INCLUDE BOOST_LIB
-
-source /etc/profile
-
-四、编译安装mysql:
-
-下载源码包：      5.7.30.tar.gz   http://mirrors.sohu.com/mysql/MySQL-5.7/mysql-5.7.30.tar.gz
-
-wget
-
-http://mirrors.sohu.com/mysql/MySQL-5.7/mysql-5.7.23.tar.gz
-
-tar zxvf mysql-5.7.23.tar.gz
-
-cd mysql-5.7.23/
-
-我的配置
-
+编译参数  
 cmake. -DCMAKE_INSTALL_PREFIX=/usr/local/mysql \
-
--DMYSQL_DATADIR=/usr/local/mysql/data\
-
--DSYSCONFDIR=/etc\
-
--DWITH_INNOBASE_STORAGE_ENGINE=1\
-
--DWITH_ARCHIVE_STORAGE_ENGINE=1\
-
--DWITH_BLACKHOLE_STORAGE_ENGINE=1\
-
--DWITH_SSL=system\
-
--DWITH_ZLIB=system\
-
--DWITH_LIBWRAP=0\
-
--DMYSQL_UNIX_ADDR=/tmp/mysql.sock\
-
--DDEFAULT_CHARSET=utf8\
-
--DDEFAULT_COLLATION=utf8_general_ci\
-
+-DMYSQL_DATADIR=/usr/local/mysql/data \
+-DSYSCONFDIR=/etc \
+-DWITH_INNOBASE_STORAGE_ENGINE=1 \
+-DWITH_ARCHIVE_STORAGE_ENGINE=1 \
+-DWITH_BLACKHOLE_STORAGE_ENGINE=1 \
+-DWITH_SSL=system \
+-DWITH_ZLIB=system \
+-DWITH_LIBWRAP=0 \
+-DMYSQL_UNIX_ADDR=/tmp/mysql.sock \
+-DDEFAULT_CHARSET=utf8 \
+-DDEFAULT_COLLATION=utf8_general_ci \
 -DDOWNLOAD_BOOST=1 \
-
--DWITH_BOOST=/usr/local/boost\
-
--DWITH_PARTITION_STORAGE_ENGINE=1\
-
--DENABLED_LOCAL_INFILE=1\
-
+-DWITH_BOOST=/usr/local/boost \
+-DWITH_PARTITION_STORAGE_ENGINE=1 \
+-DENABLED_LOCAL_INFILE=1 \
 -DENABLED_PROFILING=0
-
-备注：mysql5.7的编译需指定boost,即：DWITH_BOOST=/usr/local/boost或者-DDOWNLOAD_BOOST=1 -DWITH_BOOST=/usr/local/boost
-
-加上-DWITH_SYSTEMD=1可以使用systemd控制mysql服务，默认是不开启systemd的。但是如果不支持，cmake的时候回出错
 
 make && make install
 
 make clean
 
+    说明 ： 
+    mysql5.7的编译需指定boost,
+    -DWITH_BOOST=/usr/local/boost
+    -DDOWNLOAD_BOOST=1
+    -DWITH_BOOST=/usr/local/boost
+
+    加上-DWITH_SYSTEMD=1可以使用systemd控制mysql服务，
+    默认是不开启systemd的。但是如果不支持，cmake的时候回出错
 
 
-2、添加mysql用户和组：
+### 添加mysql用户和组：
 
 groupadd -r mysql
-
 useradd -g mysql -r -d /usr/local/mysql/data mysql
-
-chown -R mysql:mysql /usr/local/mysql'
-
+chown -R mysql:mysql /usr/local/mysql
 mkdir /usr/local/mysql/data
-
 chown -R mysql:mysql /usr/local/mysql/data
-
 cd /usr/local/mysql
 
-初始化数据库
+### 初始化数据库
 
 bin/mysqld --initialize --user=mysql --basedir=/usr/local/mysql  --datadir=/usr/local/mysql/data
 
+
+## 写配置
 cp support-files/my-default.cnf /etc/my.cnf
+
+vi /etc/my.cnf
 
 [client]
 port=3306
@@ -144,11 +118,10 @@ port=3306
 server_id=1
 socket =/usr/local/mysql/mysql.sock
 pid-file=/usr/local/mysql/data/mysql.pid
-bind-address=localhost
+# bind-address=localhost
+skip-grant-tables
 
-#skip-grant-tables
-
-..........................................................................service mysqld start
+### service 管理
 
 cp support-files/mysql.server /etc/init.d/mysqld
 
@@ -158,7 +131,9 @@ chkconfig --add mysqld
 
 chkconfig mysqld on
 
-...................................................systemctl管理
+service mysqld start
+
+### systemctl 管理
 
 cp /usr/local/mysql/support-files/mysql.server /etc/init.d/mysqld
 
@@ -166,76 +141,69 @@ chmod +x /etc/init.d/mysqld
 
 systemctl enable mysqld
 
-4、启动mysql服务
-
-service mysqld start
-
 systemctl start mysqld
 
-5、为了直接使用，加到环境变量里
+
+### 加到环境变量里
 
 echo -e '\n\nexport PATH=/usr/local/mysql/bin:$PATH\n' >> /etc/profile && source /etc/profile
 
-6、此时需要修改root用户密码，在初始化数据库是会随机生成一个密码
 
-方法如下：
+### 修改数据库密码和权限
 
-1、vim /etc/my.cnf    #编辑文件，找到[mysqld]，在下面添加一行skip-grant-tables
-
-[mysqld]
-
-skip-grant-tables
-
-:wq!
-
-#保存退出
-
-service mysqld restart
-
-#重启MySQL服务
-
-2、进入MySQL控制台
-
-mysql -uroot -p   #直接按回车，这时不需要输入root密码。
-
-3、修改root密码
+/usr/local/mysql/bin/mysql -uroot -p   #直接按回车，这时不需要输入root密码。
 
 update mysql.user set authentication_string=password('123456') where user='root';
 
-flush privileges;  #刷新系统授权表
-
 grant all on *.* to 'root'@'localhost' identified by '123456' with grant option;
 
-4、取消/etc/my.cnf中的skip-grant-tables
+update user set host = '%' where user = 'root';
 
-vi /etc/my.cnf编辑文件，找到[mysqld]，删除skip-grant-tables这一行
+flush privileges;  #刷新系统授权表
 
-:wq!
 
-#保存退出
 
-5、重启mysql
+### 再次修改配置文件,写上生产代码
 
-service
+vi /etc/my.cnf
 
-mysqld restart    #重启mysql，这个时候mysql的root密码已经修改为123456
+     # 关闭跳过密码登陆
+     # skip-grant-tables 
 
-至此mysql5,7安装好了
+ 
+ 
+### 打开端口
 
-7、启用远程连接：
+查看是否开放3306端口
+firewall-cmd --list-ports
 
-mysql数据库远程访问设置方法
+开放3306端口
+firewall-cmd --zone=public --add-port=3306/tcp --permanent
 
-1、修改localhost
+刷新
+firewall-cmd --reload
+ 
+###  修改系统配置
+     
+     [root@localhost cmake-3.0.1]# vi /etc/security/limits.conf
+     mysql soft nproc 65536
+     mysql hard nproc 65536
+     mysql soft nofile 65536
+     mysql hard nofile 65536
+     验证limit是否生效
+     
+     [root@mysql ~]# su - mysql
+     [mysql@mysql ~]$ ulimit -a
+ 
+### 维护命令
 
-更改"mysql"数据库里的"user"表里的"host"项，从"localhost"改成"%"
+ps -ef | grep mysql
 
-mysql>use mysql;
+关闭防火墙
+systemctl stop firewalld.service 
 
-mysql>update user set host = '%' where
+禁止防火墙开机自启
+systemctl disable firewalld.service
 
-user = 'root';
-
-mysql>select host, user from user;
-
-mysql>FLUSH PRIVILEGES;
+开启防火墙
+systemctl start firewalld.service 
