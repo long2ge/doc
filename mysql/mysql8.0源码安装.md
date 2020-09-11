@@ -140,32 +140,20 @@ echo -e '\n\nexport PATH=/usr/local/mysql/bin:$PATH\n' >> /etc/profile && source
  
  use mysql;
  
- update user set host='%' where user='root';
+ create user test@'%' identified with mysql_native_password by '123456';  // 添加远程登陆用户
  
- alter user 'root'@'%' identified by '123456' password expire never; // 不知道能不能执行
- 
- alter user root@'%' identified with mysql_native_password by '123456';  // 添加远程登陆用户
- 
- grant all privileges on *.* to root@'%' with grant option; // 为远程用户分配权限
+ grant all privileges on *.* to test@'%' with grant option; // 为远程用户分配权限
  
  flush privileges;
  
- 
- 
- 测试
- 
-CREATE USER aaa@'%' IDENTIFIED BY '123456!';
-GRANT ALL ON *.* TO 'aaa'@'%';
-ALTER USER 'aaa'@'%' IDENTIFIED WITH mysql_native_password BY '123456!';
-FLUSH PRIVILEGES;
-
- 
-### 再次修改配置文件,写上生产代码
+### 再次修改配置文件,写上生产配置
 
 vi /etc/my.cnf
 
      # 关闭跳过密码登陆
      # skip-grant-tables 
+     
+systemctl restart mysqld
  
 ### 打开端口
 
@@ -177,6 +165,10 @@ firewall-cmd --zone=public --add-port=3306/tcp --permanent
 
 刷新
 firewall-cmd --reload
+ 
+### Navicat 连接
+
+输入账号密码，链接mysql，需要注释 skip-grant-tables 和 bind-address
  
 ###  修改系统配置
      
