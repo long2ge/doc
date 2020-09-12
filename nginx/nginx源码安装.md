@@ -180,3 +180,8 @@ chkconfig iptables on  永久生效
 重新启动服务: systemctl restart nginx.service
 
 查看所有已启动的服务: systemctl list-units --type=service
+
+
+
+
+### 修改 nginx 配置

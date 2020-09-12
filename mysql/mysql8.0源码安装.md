@@ -27,10 +27,34 @@ yum install -y gcc gcc-c++ ncurses ncurses-devel openssl openssl-devel pcre pcre
     echo "source /opt/rh/devtoolset-9/enable" >>/etc/profile
     source /etc/profile
 
+### 安装boost (选须)
+
+可以再编译mysql的时候设置自动下载安装
+
+    wget https://dl.bintray.com/boostorg/release/1.72.0/source/boost_1_72_0.zip
+    
+    unzip boost_1_72_0.zip
+    mv  boost_1_72_0  /usr/local/boots
+    cd /usr/local/boost
+    ./bootstrap.sh
+    ./b2
+    sudo ./b2 install
+
+    vi /etc/profile
+    
+    写入下面的内容
+        BOOST_ROOT=/usr/local/boost
+        BOOST_LIB=/usr/local/boost/stage/lib
+        BOOST_INCLUDE=/usr/local/include/boost
+        export BOOST_ROOT BOOST_INCLUDE BOOST_LIB
+    结束
+    
+    source /etc/profile
 
 ### 安装mysql
 
-wget http://mirrors.sohu.com/mysql/MySQL-8.0/mysql-8.0.20.tar.gz
+    源码编译：          wget http://mirrors.sohu.com/mysql/MySQL-8.0/mysql-8.0.20.tar.gz  
+    自带boost源码编译： wget http://mirrors.sohu.com/mysql/MySQL-8.0/mysql-boost-8.0.20.tar.gz  
 
 ### 成功编译
 cmake . -DCMAKE_INSTALL_PREFIX=/usr/local/mysql \
@@ -55,7 +79,7 @@ cmake . -DCMAKE_INSTALL_PREFIX=/usr/local/mysql \
 -DWITH_EXTRA_CHARSETS=all
 
   
-
+编译 && 安装  
 make -j8 && make install
 
 

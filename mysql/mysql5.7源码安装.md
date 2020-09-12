@@ -17,24 +17,19 @@ yum install -y  gcc-c++ ncurses-devel perl-Data-Dumperpython-devel openssl opens
     ln -s /usr/local/bin/cmake /usr/bin/      // 新建软连接
     cmake --version     // 终端查看版本
 
-### 安装boost (非必须)
+
+### 安装boost (选须)
 
 可以再编译mysql的时候设置自动下载安装
 
-    wget https://dl.bintray.com/boostorg/release/1.72.0/source/boost_1_72_0.zip
+    wget http://downloads.sourceforge.net/project/boost/boost/1.59.0/boost_1_59_0.tar.gz
     
-    unzip boost_1_72_0.zip
-    
-    mv  boost_1_72_0  /usr/local/boots
-    
+    unzip boost_1_59_0.zip
+    mv  boost_1_59_0  /usr/local/boots
     cd /usr/local/boost
-    
     ./bootstrap.sh
-    
     ./b2
-    
     sudo ./b2 install
-
     vi /etc/profile
     
     写入下面的内容
@@ -47,15 +42,15 @@ yum install -y  gcc-c++ ncurses-devel perl-Data-Dumperpython-devel openssl opens
     source /etc/profile
 
 ### 编译安装mysql
+    源码编译：          wget http://mirrors.sohu.com/mysql/MySQL-5.7/mysql-5.7.30.tar.gz  
+    自带boost源码编译： wget http://mirrors.sohu.com/mysql/MySQL-5.7/mysql-boost-5.7.30.tar.gz  
 
-    wget http://mirrors.sohu.com/mysql/MySQL-5.7/mysql-5.7.30.tar.gz
-    
     tar -zxvf mysql-5.7.30.tar.gz
     
     cd mysql-5.7.30
 
 编译参数  
-cmake. -DCMAKE_INSTALL_PREFIX=/usr/local/mysql \
+cmake . -DCMAKE_INSTALL_PREFIX=/usr/local/mysql \
 -DMYSQL_DATADIR=/usr/local/mysql/data \
 -DSYSCONFDIR=/etc \
 -DWITH_INNOBASE_STORAGE_ENGINE=1 \
@@ -74,8 +69,6 @@ cmake. -DCMAKE_INSTALL_PREFIX=/usr/local/mysql \
 -DENABLED_PROFILING=0
 
 make && make install
-
-make clean
 
     说明 ： 
     mysql5.7的编译需指定boost,
@@ -102,7 +95,6 @@ bin/mysqld --initialize --user=mysql --basedir=/usr/local/mysql  --datadir=/usr/
 
 
 ## 写配置
-cp support-files/my-default.cnf /etc/my.cnf
 
 vi /etc/my.cnf
 
@@ -121,6 +113,17 @@ pid-file=/usr/local/mysql/data/mysql.pid
 # bind-address=localhost
 skip-grant-tables
 
+### systemctl 管理
+
+cp /usr/local/mysql/support-files/mysql.server /etc/init.d/mysqld
+
+chmod +x /etc/init.d/mysqld
+
+systemctl enable mysqld
+
+systemctl start mysqld
+
+
 ### service 管理
 
 cp support-files/mysql.server /etc/init.d/mysqld
@@ -133,17 +136,6 @@ chkconfig mysqld on
 
 service mysqld start
 
-### systemctl 管理
-
-cp /usr/local/mysql/support-files/mysql.server /etc/init.d/mysqld
-
-chmod +x /etc/init.d/mysqld
-
-systemctl enable mysqld
-
-systemctl start mysqld
-
-
 ### 加到环境变量里
 
 echo -e '\n\nexport PATH=/usr/local/mysql/bin:$PATH\n' >> /etc/profile && source /etc/profile
@@ -153,14 +145,15 @@ echo -e '\n\nexport PATH=/usr/local/mysql/bin:$PATH\n' >> /etc/profile && source
 
 /usr/local/mysql/bin/mysql -uroot -p   #直接按回车，这时不需要输入root密码。
 
+flush privileges;  #刷新系统授权表
+
 update mysql.user set authentication_string=password('123456') where user='root';
 
 grant all on *.* to 'root'@'localhost' identified by '123456' with grant option;
 
-update user set host = '%' where user = 'root';
+update mysql.user set host = '%' where user = 'root';
 
 flush privileges;  #刷新系统授权表
-
 
 
 ### 再次修改配置文件,写上生产代码
@@ -170,7 +163,7 @@ vi /etc/my.cnf
      # 关闭跳过密码登陆
      # skip-grant-tables 
 
- 
+systemctl restart mysqld
  
 ### 打开端口
 
