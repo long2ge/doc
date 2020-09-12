@@ -16,8 +16,8 @@ https://pkgs.org/download/oniguruma5php-devel
 
 执行下面两句，如果失效了，参考上面两个地址获取最新的下载url
 
-yum -y install https://rpms.remirepo.net/enterprise/7/remi/x86_64/oniguruma5php-6.9.5+rev1-2.el7.remi.x86_64.rpm
-yum -y install https://rpms.remirepo.net/enterprise/7/remi/x86_64/oniguruma5php-devel-6.9.5+rev1-2.el7.remi.x86_64.rpm
+yum -y install http://rpms.remirepo.net/enterprise/7/remi/x86_64/oniguruma5php-6.9.5+rev1-2.el7.remi.x86_64.rpm
+yum -y install http://rpms.remirepo.net/enterprise/7/remi/x86_64/oniguruma5php-devel-6.9.5+rev1-2.el7.remi.x86_64.rpm
 
 
 
@@ -157,7 +157,7 @@ make && make install
 
 加入系统变量
 
-export PATH=$PATH:/usr/local/php/bin
+export PATH="$PATH:/usr/local/php/bin"
 
 让修改生效
 source /etc/profile
@@ -184,7 +184,9 @@ cp  /usr/local/php/etc/php-fpm.d/www.conf.default /usr/local/php/etc/php-fpm.d/w
 
 vi /usr/local/php/etc/php-fpm.conf
 
-把pid的选项打开，然后填入路径，我的路径是/usr/local/php/etc/php-fpm.pid
+把pid的选项打开，然后填入路径，我的路径是
+
+/usr/local/php/etc/php-fpm.pid
 
 
 
@@ -230,7 +232,7 @@ Warning: Unit file of nginx.service changed on disk,'systemctl daemon-reload' re
 
 设置开机启动
 
-systemctl enable php-fpm.service 或者 systemctl enable php-fpm
+systemctl enable php-fpm.service    或者 systemctl enable php-fpm
 
 停止开机启动
 
