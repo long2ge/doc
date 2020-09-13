@@ -87,7 +87,7 @@ make -j8 && make install
 ### 说明
 安装了boost的可以不需要：
 -DDOWNLOAD_BOOST=1 
--DWITH_BOOST
+-DWITH_BOOST （boost软件包的位置）
 
 
 安装位置与数据位置根据需要自定义：

@@ -72,7 +72,7 @@ make && make install
 
     说明 ： 
     mysql5.7的编译需指定boost,
-    -DWITH_BOOST=/usr/local/boost
+    -DWITH_BOOST=/usr/local/boost （boost软件包的位置）
     -DDOWNLOAD_BOOST=1
     -DWITH_BOOST=/usr/local/boost
 

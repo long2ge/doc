@@ -21,6 +21,8 @@ nginx所需软件:
 
 
 ### 安装perl5
+
+
 wget https://www.cpan.org/src/5.0/perl-5.32.0.tar.gz
 tar -xzf perl-5.32.0.tar.gz
 cd perl-5.32.0
@@ -74,16 +76,30 @@ cd nginx-1.18.0
 --group=nginx \
 --prefix=/usr/local/nginx \
 --with-http_ssl_module \
---with-openssl=/root/nginx/openssl-1.1.1g \
---with-pcre=/root/nginx/pcre-8.44 \
---with-zlib=/root/nginx/zlib-1.2.11 \
+--with-openssl=/root/nginx/openssl-1.1.1g \ (软件包解压的位置)
+--with-pcre=/root/nginx/pcre-8.44 \ (软件包解压的位置)
+--with-zlib=/root/nginx/zlib-1.2.11 \ (软件包解压的位置)
 --with-http_stub_status_module \
 --with-threads
+
+
+
+
 
 make && make install
 
 
 可以修改配置文件: vi /usr/local/nginx/conf/nginx.conf
+
+把下面代码打开
+location ~ \.php$ {
+	root           /usr/local/nginx/html;
+	fastcgi_pass   127.0.0.1:9000;
+	fastcgi_index  index.php;
+	fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+	include        fastcgi_params;
+}
+
 
 
 firewall-cmd --zone=public --add-port=80/tcp --permanent  开启80端口
@@ -124,6 +140,15 @@ ps -ef | grep nginx
 
 
 
+
+测试php是否和nginx互通了
+
+vi /usr/local/nginx/html/test.php
+
+<?php
+echo phpinfo();
+
+然后访问 xxx.com/test.php
 
 
 
