@@ -84,7 +84,13 @@ make && make install
 
 
 可以修改配置文件: vi /usr/local/nginx/conf/nginx.conf
-
+location ~ \.php$ {
+        root            html;
+        fastcgi_pass   127.0.0.1:9000;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        include        fastcgi_params;
+    }
 
 firewall-cmd --zone=public --add-port=80/tcp --permanent  开启80端口
 
