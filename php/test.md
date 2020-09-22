@@ -25,3 +25,12 @@
 7. JSON_UNESCAPED_UNICODE, 故名思议, 就是说, Json不要编码Unicode
 
 8. 多位数据排序　－　array_multisort
+
+9. 异常 - PHP 中的 Exception, Error, Throwable
+    
+    
+    
+    1. PHP 中将代码自身异常(一般是环境或者语法**所致)称作错误 Error，将运行**现的逻辑错误称为异常 Exception
+    错误是没法通过代码处理的，而异常则可以通过 try/catch 来处理
+    2. PHP7 **现了 Throwable 接口，该接口由 Error 和 Exception 实现，用户不能直接实现 Throwable 接口，而只能通过继承 Exception 来实现接口
+    3. 注意：其他级别的错误如 warning 和 notice，和之前一样不会抛出异常，只有 fatal 和 recoverable 级别的错误会抛出异常。
