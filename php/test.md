@@ -34,3 +34,11 @@
     错误是没法通过代码处理的，而异常则可以通过 try/catch 来处理
     2. PHP7 **现了 Throwable 接口，该接口由 Error 和 Exception 实现，用户不能直接实现 Throwable 接口，而只能通过继承 Exception 来实现接口
     3. 注意：其他级别的错误如 warning 和 notice，和之前一样不会抛出异常，只有 fatal 和 recoverable 级别的错误会抛出异常。
+    
+    
+DIRECTORY_SEPARATOR：PHP 系统分隔符常量
+
+
+10k个元素的一维数组大概消耗540k内存，
+10k x 10 的二维数组理论上只需要 6M 左右的空间，
+但是按照 memory_get_usage 的结果则两倍于此，[10k,5,2]的三维数组居然消耗了23M，
