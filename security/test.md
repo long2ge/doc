@@ -8,9 +8,17 @@ XSS攻击
 3. ini_set("session.cookie_httponly", 1);
 设置 HttpOnly，你在浏览器的document对象中就看不到Cookie了。
 
+这种session劫持主要靠XSS漏洞和客户端获取sessionId完成，一次防范分两步
+
+1. 过滤用户输入，防止XSS漏洞
+
+2. 设置sessionId的cookie为HttpOnly，使客户端无法获取
+
 
 XML注入
 
 Xss 攻击
 
 Ldap注入
+
+

@@ -238,7 +238,7 @@ systemctl enable php-fpm.service    或者 systemctl enable php-fpm
 
 systemctl disable php-fpm.service
 
-启动nginx服务
+启动php-fpm服务
 
 systemctl start php-fpm.service
 
