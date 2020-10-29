@@ -1,0 +1,2 @@
+path.config: /usr/share/logstash/conf.d/*.conf
+path.logs: /usr/share/logstash/output-logs
