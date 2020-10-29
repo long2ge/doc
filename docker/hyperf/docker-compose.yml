@@ -1,0 +1,24 @@
+version: '3'
+
+networks:
+  backend:
+    driver: bridge
+
+services:
+
+### hyperf docker镜像的缺省命令是bash，如果不加 -it，bash命令执行了自动会退出 ################################################
+
+    hyperf:
+      container_name: hyperf
+      build: "./hyperf-docker/test/"
+      volumes:
+        - E:/work/hyperf-skeleton:/var/www/hyperf-skeleton
+      ports:
+        - "9501:9501"
+      networks:
+        - backend
+      stdin_open: true
+      tty: true
+      
+
+        
