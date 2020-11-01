@@ -42,3 +42,7 @@ DIRECTORY_SEPARATOR：PHP 系统分隔符常量
 10k个元素的一维数组大概消耗540k内存，
 10k x 10 的二维数组理论上只需要 6M 左右的空间，
 但是按照 memory_get_usage 的结果则两倍于此，[10k,5,2]的三维数组居然消耗了23M，
+
+
+
+1. GET和POST的区别？
