@@ -214,7 +214,24 @@ nginx 默认ET模式
 优势在于可以同时处理多个connection。
 
 
+
+
+
+epoll它的核心就是三个函数两个数据结构
+
+![Image text](https://img-blog.csdnimg.cn/20200102153320411.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0RhY2hhbzA3MDc=,size_16,color_FFFFFF,t_70) 
+
+epoll_create:这个函数就是创建一个epoll对象，
+调用这个函数的时候内核会帮我们创建一个epoll实例数据结构，
+就是一个用于存放fd的红黑树和一个用于存储就绪事件的链表，
+这些是在内核中存放了一下块缓存中。
+
+epoll_ctl:这个函数就是负责管理fd的增加和删除的,也就是在红黑树上进行删除和增加。
+
+epoll_wait(),它是用来阻塞等待注册事件发生的，返回值是发生事件的数目，并且把事件写入到events数组中
+
 参考
 https://www.cnblogs.com/fanzhidongyzby/p/4098546.html
 https://www.cnblogs.com/lankerenf3039/p/12116142.html
 https://blog.csdn.net/m0_37962600/article/details/81407442
+https://blog.csdn.net/Dachao0707/article/details/103805224
