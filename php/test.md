@@ -46,3 +46,13 @@ DIRECTORY_SEPARATOR：PHP 系统分隔符常量
 
 
 1. GET和POST的区别？
+
+
+502
+上面说到nginx收到了无法理解的响应，什么是无法理解的响应呢？
+
+nginx无法与php-fpm进行连接。
+nginx在连接php-fpm一段时间后发现与php-fpm的连接被断开。
+
+504
+504即nginx超过了自己设置的超时时间，不等待php-fpm的返回结果，直接给客户端返回504错误。
