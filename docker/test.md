@@ -265,3 +265,20 @@ $ docker network create NAME
 同一个容器可以同时加入到多个 network 下，此时该容器拥有多个网络接口，分别连接到不通的 bridge 上（可以通过 ip a 查看）。
 
 
+
+
+
+
+
+docker Enginx configuration json
+
+{
+  "registry-mirrors": [
+    "https://registry.docker-cn.com",
+    "http://hub-mirror.c.163.com",
+    "https://docker.mirrors.ustc.edu.cn"
+  ],
+  "insecure-registries": [],
+  "debug": true,
+  "experimental": true
+}
