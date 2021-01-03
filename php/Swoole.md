@@ -31,9 +31,6 @@ Swoole的协程在底层实现上是单线程的，因此同一时间只有一�
 
 
 
-consul redis zk 的区别？
-syn攻击（拒绝服务攻击）？
-
 
 
 协程所有的操作都可以再用户态完成，创建和切换的消耗更低。
@@ -65,5 +62,34 @@ Worker进程退出后Manager进程会重新拉起一个新的Worker进程
 常驻内存减少了不小开销，swoole不错
 应尽量避免使用全局变量，不用最好，没啥用
 max_request可以解决php的内存溢出问题，但是主要还是要养成释放内存的习惯，因为max_request也有限制场景
+
+
+
+### Swoole的进程模型
+
+Master ( 主进程 ) 分成  主进程 ( Accept 和 信号处理等 ) 和 Reactor[线程]（ 处理TCP连接, 处理网络IO，收发数据等 ）
+Manage (管理进程)
+Worker ( 工作进程 )
+Task ( swoole异步任务task )
+
+深入理解swoole task：swoole的业务逻辑是同步阻塞运行的，有时候我们要做一些比较消耗内存和cpu或者磁盘的操作的时候，我们需要使用到异步task任务；即我们在跑我们业务逻辑的时候只要你运行task你就会开启新的进程去处理消耗大的操作，当前的业务逻辑的进程继续运行，他们之间互不干涉，这个就很好地解决了php不支持多线程操作的障碍；
+
+
+一个多进程模式下的Swoole Server中，有且只有一个Master进程；有且只有一个Manager进程；却可以有n个Worker进程。
+
+第一层，Master进程，这个是swoole的主进程,这个进程是用于处理swoole的核心事件驱动的，那么在这个进程当中可以看到它拥有一个MainReactor[线程]以及若干个Reactor[线程]，swoole所有对于事件的监听都会在这些线程中实现，比如来自客户端的连接，信号处理等。
+
+
+
+
+
+Master、Manage、Worker、Task四种进程之间是怎么协作的：
+1、Client主动Connect的时候，Client实际上是与Master进程中的某个Reactor线程发生了连接。
+2、当TCP的三次握手成功了以后，由这个Reactor线程将连接成功的消息告诉Manager进程，再由Manager进程转交给Worker进程。
+3、在这个Worker进程中触发了OnConnect的方法。
+4、当Client向Server发送了一个数据包的时候，首先收到数据包的是Reactor线程，同时Reactor线程会完成组包，再将组好的包交给Manager进程，由Manager进程转交给Worker。
+5、此时Worker进程触发OnReceive事件。
+6、如果在Worker进程中做了什么处理，然后再用Send方法将数据发回给客户端时，数据则会沿着这个路径逆流而上。
+7、Task进程主要处理一些占用时间较长的业务，主要处理Worker进程中占时较长的一些任务。
 
 
