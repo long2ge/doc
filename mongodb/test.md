@@ -1,4 +1,5 @@
-MongoDB采用B树索引
+MongoDB采用B-树索引
+
 
 Mongodb 更新失败解决方案
 
