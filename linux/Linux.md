@@ -41,3 +41,7 @@ make -j4  可以把项目在进行并行编译
     
 #### ip
     查看本机IP地址 ip addr
+
+#### 压力测试工具
+ yum -y  install httpd-tools
+  
