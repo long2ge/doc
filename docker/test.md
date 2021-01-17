@@ -282,3 +282,7 @@ docker Enginx configuration json
   "debug": true,
   "experimental": true
 }
+
+
+OSI七层模型中的网桥 是在数据链路层的
+
